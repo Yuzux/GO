@@ -10,6 +10,12 @@ import (
 
 func main() {
 
+	positions, err := loadJosePositions("hangman.txt")
+	if err != nil {
+		fmt.Println("Error in loading José's positions:", err)
+		os.Exit(1)
+	}
+
 	file, err := os.Open("words.txt")
 	if err != nil {
 		fmt.Println("Error in opening file")
@@ -37,11 +43,19 @@ func main() {
 		guessedWord[i] = "_"
 	}
 
-	printWord(guessedWord)
+	lettersToReveal := (len(word) / 2) - 1
+	if lettersToReveal < 1 {
+		lettersToReveal = 1
+	}
+
+	revealRandomLetters(word, guessedWord, lettersToReveal)
 
 	chances := 10
+	fmt.Printf("Good Luck, you have %d attempts.\n", chances)
+	printWord(guessedWord)
+
 	for chances > 0 {
-		fmt.Println("Enter a letter:")
+		fmt.Print("\nChoose: ")
 		reader := bufio.NewReader(os.Stdin)
 		letter, _ := reader.ReadString('\n')
 		letter = strings.TrimSpace(letter)
@@ -64,17 +78,20 @@ func main() {
 
 		if isWordGuessed(guessedWord) {
 			fmt.Println("Congratulations! You have guessed the word.")
+			displayJosePosition(positions, chances)
 			break
 		}
 
 		if !found {
 			chances--
-			fmt.Println("Chances left:", chances)
+			fmt.Printf("Not present in the word, %d attempts remaining\n", chances)
+			displayJosePosition(positions, chances)
 		}
 	}
 
 	if chances == 0 {
 		fmt.Println("You have lost the game. The word was:", word)
+		displayJosePosition(positions, 0)
 	}
 }
 
@@ -96,4 +113,55 @@ func isWordGuessed(guessedWord []string) bool {
 
 func randInt(min, max int) int {
 	return min + rand.Intn(max-min)
+}
+
+func revealRandomLetters(word string, guessedWord []string, n int) {
+	revealedIndices := map[int]bool{}
+
+	for len(revealedIndices) < n {
+		randomIndex := rand.Intn(len(word))
+		if _, alreadyRevealed := revealedIndices[randomIndex]; !alreadyRevealed {
+			guessedWord[randomIndex] = string(word[randomIndex])
+			revealedIndices[randomIndex] = true
+		}
+	}
+}
+
+func loadJosePositions(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var positions []string
+	var position string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == ";" {
+			positions = append(positions, position)
+			position = ""
+		} else {
+			position += line + "\n"
+		}
+	}
+
+	if strings.TrimSpace(position) != "" {
+		positions = append(positions, position)
+	}
+
+	return positions, scanner.Err()
+}
+
+func displayJosePosition(positions []string, chances int) {
+	index := 10 - chances
+	if index >= 10 {
+		index = 9
+	} else if index < 0 {
+		index = 0
+	}
+
+	fmt.Println(positions[index])
 }

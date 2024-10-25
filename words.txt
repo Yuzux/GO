@@ -28,6 +28,7 @@ Clay
 Cocoa
 Crow
 Crown
+D
 D:KillerWife
 Delta
 Diesel
@@ -68,6 +69,7 @@ Isabel
 Jackal
 Johan
 Julia
+K
 Kilo
 Laplace
 LegendaryCommander
